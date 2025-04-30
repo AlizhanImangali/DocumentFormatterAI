@@ -1,209 +1,288 @@
 import streamlit as st
 from docx import Document
-from docx.oxml.ns import qn
 from docx.shared import Pt, RGBColor, Inches
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_LINE_SPACING
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT,WD_LINE_SPACING
 from docx.oxml import OxmlElement
-from lxml import etree
-from zipfile import ZipFile
+from docx.oxml.ns import qn
 import re
 import io
+#input_path = "Change.docx"
+#output_path = "Reformatted_Change.docx"
+st.title("DOCX Formatter")
+uploaded_file = st.file_uploader("Upload your Word (.docx) file", type=["docx"])
 
-# === SETTINGS ===
-output_path = "Result.docx"
+if uploaded_file:
+# Load document
+    doc = Document(uploaded_file)
+    formatted_doc = Document()
 
-# === CREATE OUTPUT DOCUMENT ===
-formatted_doc = Document()
+    def apply_format(paragraph, font_size, bold, align, spacing_after=6, spacing_before=0):
+        run = paragraph.runs[0] if paragraph.runs else paragraph.add_run()
+        font = run.font
+        font.name = 'Times New Roman'
+        run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+        font.size = Pt(font_size)
+        font.bold = bold
+        font.color.rgb = RGBColor(0, 0, 0)
+        pf = paragraph.paragraph_format
+        pf.alignment = align
+        pf.space_after = Pt(spacing_after)
+        pf.space_before = Pt(spacing_before)
+        pf.line_spacing = Pt(12)
 
-# === 1. Utility Functions ===
+    def apply_format2(paragraph, font_size, bold, align, spacing_after, spacing_before=0):
+        run = paragraph.runs[0] if paragraph.runs else paragraph.add_run()
+        font = run.font
+        font.name = 'Times New Roman'
+        run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+        font.size = Pt(font_size)
+        font.bold = bold
+        font.color.rgb = RGBColor(0, 0, 0)
+        pf = paragraph.paragraph_format
+        pf.alignment = align
+        pf.space_after = Pt(spacing_after)
+        pf.space_before = Pt(spacing_before)
+        #pf.line_spacing = Pt(12)
 
-def is_grey_textbox(paragraph):
-    p = paragraph._element
-    pPr = p.find(qn('w:pPr'))
-    if pPr is not None:
-        shd = pPr.find(qn('w:shd'))
-        if shd is not None:
-            fill = shd.get(qn('w:fill'))
-            return fill == 'D9D9D9'
-    return False
-
-def set_character_spacing(run, spacing_val):
-    rPr = run._element.get_or_add_rPr()
-    spacing = OxmlElement('w:spacing')
-    spacing.set(qn('w:val'), str(spacing_val))
-    rPr.append(spacing)
-
-def extract_grey_textboxes_from_docx(docx_path):
-    with ZipFile(docx_path) as docx_zip:
-        xml = docx_zip.read("word/document.xml")
-    tree = etree.XML(xml)
-    ns = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
-
-    boxes = []
-    for p in tree.xpath('//w:p', namespaces=ns):
-        pPr = p.find('w:pPr', namespaces=ns)
-        if pPr is not None:
-            shd = pPr.find('w:shd', namespaces=ns)
-            if shd is not None and shd.get(f'{{{ns["w"]}}}fill') == 'D9D9D9':
-                texts = p.xpath('.//w:t', namespaces=ns)
-                full_text = ''.join(t.text for t in texts if t.text)
-                if full_text.strip():
-                    boxes.append(full_text.strip())
-    return boxes
-
-def set_paragraph_border(paragraph):
-    p = paragraph._element
-    pPr = p.get_or_add_pPr()
-    pBdr = OxmlElement('w:pBdr')
-
-    for border in ['top', 'left', 'bottom', 'right']:
-        side = OxmlElement(f'w:{border}')
-        side.set(qn('w:val'), 'single')
-        side.set(qn('w:sz'), '2')
-        side.set(qn('w:space'), '2')
-        side.set(qn('w:color'), 'auto')
-        pBdr.append(side)
-
-    pPr.append(pBdr)
-
-    shd = OxmlElement('w:shd')
-    shd.set(qn('w:val'), 'clear')
-    shd.set(qn('w:color'), 'auto')
-    shd.set(qn('w:fill'), 'D9D9D9')
-    pPr.append(shd)
-
-def apply_format(paragraph, font_size, bold, align, spacing_after=6, spacing_before=0, line_spacing_rule=WD_LINE_SPACING.SINGLE):
-    run = paragraph.runs[0] if paragraph.runs else paragraph.add_run()
-    font = run.font
-    font.name = 'Times New Roman'
-    run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
-    font.size = Pt(font_size)
-    font.bold = bold
-    font.color.rgb = RGBColor(0, 0, 0)
-    pf = paragraph.paragraph_format
-    pf.alignment = align
-    pf.space_after = Pt(spacing_after)
-    pf.space_before = Pt(spacing_before)
-    pf.line_spacing_rule = line_spacing_rule
-    pf.line_spacing = Pt(12)
-
-def is_list_item(paragraph):
-    if paragraph.style.name.startswith('List Number'):
-        return True
-    return False
-
-def is_signature_line(text):
-    return bool(re.search(r'.{5,}\s{2,}.+', text)) or '\t' in text
-
-def add_signature_line(title, initials):
-    table = formatted_doc.add_table(rows=1, cols=2)
-    table.autofit = False
-    table.allow_autofit = False
-    table.columns[0].width = Inches(4.7)
-    table.columns[1].width = Inches(1.8)
-
-    row = table.rows[0]
-    cell_title = row.cells[0]
-    cell_initials = row.cells[1]
-
-    p1 = cell_title.paragraphs[0]
-    run1 = p1.add_run(title)
-    run1.bold = True
-    run1.font.name = 'Times New Roman'
-    run1.font.size = Pt(12)
-
-    p2 = cell_initials.paragraphs[0]
-    p2.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
-    run2 = p2.add_run(initials)
-    run2.font.name = 'Times New Roman'
-    run2.font.size = Pt(12)
-
-def classify_and_format(paragraph):
-
-    if is_list_item(paragraph):
-        p = formatted_doc.add_paragraph(paragraph.text, style='List Number')
+    def move_short_words_to_next_line(text):
+        lines = text.split('\n')
+        new_lines = []
         
-    text = paragraph.text.strip()
-    if not text:
-        return
+        for line in lines:
+            words = line.strip().split()
+            if len(words) >= 2 and len(words[-1]) > 2:
+                if len(words[-2]) <= 2:
+                    # move short word to next line
+                    new_line = " ".join(words[:-2])
+                    short_word = words[-2]
+                    last_word = words[-1]
+                    if new_line:
+                        new_lines.append(new_line)
+                    new_lines.append(f"{short_word}\u00A0{last_word}")
+                    continue
+            new_lines.append(line)
+        
+        return '\n'.join(new_lines)
 
-    if text == "ПОЯСНИТЕЛЬНАЯ ЗАПИСКА":
-        p = formatted_doc.add_paragraph()
-        run = p.add_run(text)
-        set_character_spacing(run, 60)
-        apply_format(p, 14, True, WD_PARAGRAPH_ALIGNMENT.CENTER)
+    def apply_typographic_fixes(text):
+        # 1. Non-breaking space after №
+        text = text.replace("№ ", "№\u00A0")
 
-    elif text.lower().startswith("к вопросу"):
-        p = formatted_doc.add_paragraph(text)
-        apply_format(p, 12, True, WD_PARAGRAPH_ALIGNMENT.CENTER)
-        p = formatted_doc.add_paragraph()
+        # 2. Non-breaking space between day and month (using raw string pattern, regular string replacement)
+        text = re.sub(
+            r'\b(\d{1,2})\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\b',
+            lambda m: f"{m.group(1)}\u00A0{m.group(2)}",
+            text
+        )
 
-    elif is_signature_line(text):
-        if '\t' in text:
-            parts = text.split('\t')
-        else:
-            parts = re.split(r'\s{2,}', text)
-        title = parts[0].strip()
-        initials = parts[1].strip() if len(parts) > 1 else ""
-        add_signature_line(title, initials)
+        # 3. Move 1–2 letter word from end of line to start of next
+        text = move_short_words_to_next_line(text)
 
-    elif text.strip() == "Согласовано":
-        p = formatted_doc.add_paragraph(text)
-        apply_format(p, 12, True, WD_PARAGRAPH_ALIGNMENT.CENTER)
+        return text
 
-    elif text.strip() == "Информация о страховом случае": 
-        p = formatted_doc.add_paragraph(text)
-        apply_format(p,11,True,WD_PARAGRAPH_ALIGNMENT.LEFT)
+    def set_character_spacing(run, spacing_val):
+        rPr = run._element.get_or_add_rPr()
+        spacing = OxmlElement('w:spacing')
+        spacing.set(qn('w:val'), str(spacing_val))
+        rPr.append(spacing)
 
-    elif text in ("Управляющий директор", "Исполнитель"):
-        p = formatted_doc.add_paragraph(text)
-        apply_format(p, 12, True, WD_PARAGRAPH_ALIGNMENT.LEFT)
+    def fix_docx_numbering(text):
+        """
+        Fix duplicated numbering at the beginning of a line: '1. 1. Text' -> '1. Text'
+        """
+        return re.sub(r'^(\d+\.)\s+\d+\.\s+', r'\1 ', text)
 
-    elif text.startswith("Основание для рассмотрения вопроса Советом директоров"):
-        p = formatted_doc.add_paragraph(text)
-        apply_format(p, 12, True, WD_PARAGRAPH_ALIGNMENT.LEFT)
+    def set_format(paragraph, size=12, bold=False, align=WD_PARAGRAPH_ALIGNMENT.LEFT):
+        run = paragraph.runs[0] if paragraph.runs else paragraph.add_run()
+        font = run.font
+        font.name = 'Times New Roman'
+        font.size = Pt(size)
+        font.bold = bold
+        font.color.rgb = RGBColor(0, 0, 0)
+        paragraph.paragraph_format.alignment = align
 
-    elif text.startswith("* * *"):
-        p = formatted_doc.add_paragraph(text)
-        apply_format(p, 12, False, WD_PARAGRAPH_ALIGNMENT.CENTER)
-    
-    elif text.startswith("Приложения") :
-        p = formatted_doc.add_paragraph(text)
-    
-    elif text.startswith("Осуществить страховую выплату"):
-        p = formatted_doc.add_paragraph(text)
-    else:
-        p = formatted_doc.add_paragraph(text)
-        apply_format(p, 12, False, WD_PARAGRAPH_ALIGNMENT.LEFT)
+    def add_signature_table(title, name):
+        table = formatted_doc.add_table(rows=1, cols=2)
+        table.columns[0].width = Inches(4.7)
+        table.columns[1].width = Inches(1.8)
+        cell1, cell2 = table.rows[0].cells
+        p1 = cell1.paragraphs[0].add_run(title)
+        p1.bold = True
+        p1.font.size = Pt(12)
+        p1.font.name = 'Times New Roman'
+        p2 = cell2.paragraphs[0].add_run(name)
+        p2.font.size = Pt(12)
+        p2.font.name = 'Times New Roman'
+        cell2.paragraphs[0].alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
 
-# === Streamlit UI ===
+    def set_shading(run, fill_color):
+        """Applies background shading (highlighting) to a run."""
+        rPr = run._element.get_or_add_rPr()
+        shd = OxmlElement('w:shd')
+        shd.set(qn('w:val'), 'clear')
+        shd.set(qn('w:color'), 'auto')
+        shd.set(qn('w:fill'), fill_color)  # e.g., 'FFFF00' for yellow
+        rPr.append(shd)
 
-# Upload DOCX file
-uploaded_file = st.file_uploader("Upload a DOCX file", type=["docx"])
+    # === Split paragraphs by blocks ===
+    blocks = {}
+    current_block = None
+    for para in doc.paragraphs:
+        text = para.text.strip()
+        block_header = re.match(r"^Блок(\d+)", text)
+        if block_header:
+            current_block = f"Блок{block_header.group(1)}"
+            blocks[current_block] = []
+        elif current_block:
+            blocks[current_block].append(text)
 
-if uploaded_file is not None:
-    # Save uploaded file to a temporary location
-    with open("temp.docx", "wb") as f:
-        f.write(uploaded_file.getbuffer())
-    
-    # Load the original DOCX file
-    original_doc = Document("temp.docx")
-    
-    # Process paragraphs from the uploaded DOCX
-    for para in original_doc.paragraphs:
-        if is_grey_textbox(para):
-            # This paragraph is a grey textbox
+    # === Process blocks with specific styles ===
+
+    for block, paragraphs in blocks.items():
+        formatted_doc.add_paragraph(block).runs[0].font.color.rgb = RGBColor(255, 0, 0)  # Red block header
+
+        if block == "Блок1":
+            text = "ПОЯСНИТЕЛЬНАЯ ЗАПИСКА"
             p = formatted_doc.add_paragraph()
-            run = p.add_run(para.text.strip())
-            run.font.size = Pt(11)
-            run.font.name = 'Times New Roman'
-            set_paragraph_border(p)
-        else: 
-            classify_and_format(para)
+            run = p.add_run(text)
+            set_character_spacing(run,60)
+            apply_format(p,14,True,WD_PARAGRAPH_ALIGNMENT.CENTER)
+            for para in paragraphs:
+                p = formatted_doc.add_paragraph(para)
+                set_format(p, 12, True, WD_PARAGRAPH_ALIGNMENT.CENTER)
+                apply_typographic_fixes(p.text)
+        elif block == "Блок2":
+            text = "Условные (сокращенные) обозначения, использованные в пояснительной записке"
+            p = formatted_doc.add_paragraph()
+            run = p.add_run(text)
+            apply_format(p,11,True,WD_PARAGRAPH_ALIGNMENT.LEFT)
+            for para in paragraphs:
+                if "–" in para or "-" in para:
+                    p = formatted_doc.add_paragraph(para)
+                    set_format(p, 11, False)
+                    apply_typographic_fixes(p.text)
+                else:
+                    parts = para.split("–", 1)
+                    if len(parts) == 2:
+                        term, desc = parts
+                        p = formatted_doc.add_paragraph()
+                        apply_typographic_fixes(p.text)
+                        run = p.add_run(term.strip() + " – ")
+                        run.bold = True
+                        run.font.name = 'Times New Roman'
+                        run.font.size = Pt(11)
+                        p.add_run(desc.strip())
+                        set_format(p, 11)
 
-    # Save the formatted result to a file
-    formatted_doc.save(output_path)
+        elif block == "Блок3":
+            #lines_to_merge = []
+            #for p in doc.paragraphs:
+            #    if p.text.strip():  # skip empty lines
+            #        lines_to_merge.append(p.text)
 
-    # Provide a download link to the user
-    with open(output_path, "rb") as f:
-        st.download_button("Download Reformatted DOCX", f, file_name="Reformatted_Result.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            for para in paragraphs:
+                p = formatted_doc.add_paragraph(para)
+                run = p.add_run()
+                run = p.runs[0] if p.runs else p.add_run()
+                font = run.font
+                font.name = 'Times New Roman'
+                run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+                font.size = Pt(11)
+                font.bold = False
+                font.color.rgb = RGBColor(0, 0, 0)
+                set_shading(run, 'D9D9D9')
+            # Join all lines with a line break
+            #for idx, line in enumerate(lines_to_merge):
+            #    run.add_text(line)
+            #    if idx != len(lines_to_merge) - 1:
+            #        run.add_break() 
+
+                pf = p.paragraph_format
+                pf.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
+                pf.space_after = Pt(0)
+                pf.space_before = Pt(0)
+                pf.line_spacing_rule = WD_LINE_SPACING.SINGLE
+                if p.text == "Основание выноса вопроса на рассмотрение Советом директоров":
+                    font.bold = True
+                #if para == "Основание выноса вопроса на рассмотрение Советом директоров":
+                #  font.bold = True
+        elif block == "Блок4":
+            for para in paragraphs: 
+                p = formatted_doc.add_paragraph(para)
+                run = p.add_run()
+                run = p.runs[0] if p.runs else p.add_run()
+                font = run.font
+                font.name = 'Times New Roman'
+                run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+                font.size = Pt(12)
+                font.bold = False
+                font.color.rgb = RGBColor(0, 0, 0)
+
+
+                f = p.paragraph_format
+                pf.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
+                pf.space_after = Pt(0)
+                pf.space_before = Pt(0)
+                pf.line_spacing_rule = WD_LINE_SPACING.SINGLE
+                #set_shading(run, 'D9D9D9')
+        elif block == "Блок7":
+            for para in paragraphs:
+                if re.match(r"^\d+\.", para):
+                    p = formatted_doc.add_paragraph(para)
+                    p.text = fix_docx_numbering(p.text)
+                    apply_typographic_fixes(p.text)
+                    
+                else:
+                    p = formatted_doc.add_paragraph(para)
+                set_format(p)
+
+        elif block == "Блок8":
+            for para in paragraphs:
+                parts = re.split(r"\t+|\s{2,}", para)
+                if len(parts) >= 2:
+                    add_signature_table(parts[0].strip(), parts[1].strip())
+                else:
+                    p = formatted_doc.add_paragraph(para)
+                    set_format(p)
+
+        #elif block == "Блок8":
+        #    for para in paragraphs:
+        #         p = formatted_doc.add_paragraph()
+        #         apply_format(p,10,False,WD_PARAGRAPH_ALIGNMENT.LEFT)
+        
+        elif block == "Блок9":
+            for para in paragraphs: 
+                if para:
+                    p = formatted_doc.add_paragraph()
+                    run = p.add_run(para)
+                    apply_format(p,10,False,WD_PARAGRAPH_ALIGNMENT.LEFT)
+
+        elif block == "Блок10":
+            p = formatted_doc.add_paragraph(style='Normal')
+            run = p.add_run("Приложения")
+            font = run.font
+            font.name = 'Times New Roman'
+            font.size = Pt(11)
+            font.bold = True
+            for para in paragraphs:
+                if para:
+                    p = formatted_doc.add_paragraph(para, style='List Number') 
+                    set_format(p)
+                    apply_typographic_fixes(p.text)
+
+        else:
+            for para in paragraphs:
+                if para:
+                    fixed_text = apply_typographic_fixes(para) 
+                    p = formatted_doc.add_paragraph(para)
+                    set_format(p)
+                    apply_typographic_fixes(p.text)
+
+
+    # === Save result ===
+    #formatted_doc.save(output_path)
+    #print(f"✅ Reformatted document saved to: {output_path}")
+    buffer = io.BytesIO()
+    formatted_doc.save(buffer)
+    buffer.seek(0)
+    st.download_button("Download Reformatted DOCX", data=buffer, file_name="Reformatted_Change.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
