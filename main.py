@@ -448,12 +448,56 @@ if uploaded_file:
                 set_format(p)
 
         elif block == "Блок8":
+            bold_words = [
+                    "Председатель Правления", 
+                    "Заместитель Председателя Правления", 
+                    "Советник Председателя Правления", 
+                    "Управляющий директор", 
+                    "ПМ"
+            ]
+
             for para in paragraphs:
                 parts = re.split(r"\t+|\s{2,}", para)
+
                 if len(parts) >= 2:
-                    add_signature_table(parts[0].strip(), parts[1].strip())
+                    role = parts[0].strip()
+                    name = parts[1].strip()
+                    p = formatted_doc.add_paragraph()
+
+                    # Устанавливаем табуляцию
+                    tab_stops = p.paragraph_format.tab_stops
+                    tab_stops.add_tab_stop(Inches(5.0), alignment=WD_TAB_ALIGNMENT.LEFT)
+
+                    # Добавляем роль с выборочным выделением жирным
+                    i = 0
+                    while i < len(role):
+                        matched = False
+                        for bw in bold_words:
+                            if role[i:].startswith(bw):
+                                run = p.add_run(bw)
+                                run.bold = True
+                                run.font.name = "Times New Roman"
+                                run.font.size = Pt(12)
+                                i += len(bw)
+                                matched = True
+                                break
+                        if not matched:
+                            run = p.add_run(role[i])
+                            run.font.name = "Times New Roman"
+                            run.font.size = Pt(12)
+                            i += 1
+
+                    # Добавляем табуляцию и имя
+                    p.add_run("\t")
+                    run_name = p.add_run(name)
+                    run_name.font.name = "Times New Roman"
+                    run_name.font.size = Pt(12)
+
+                    p.paragraph_format.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+
                 else:
                     p = formatted_doc.add_paragraph(para)
+                    bold_keywords(p, bold_words)
                     set_format(p)
 
         #elif block == "Блок8":
