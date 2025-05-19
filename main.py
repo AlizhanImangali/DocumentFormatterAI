@@ -161,13 +161,14 @@ if uploaded_file:
                     if not matched:
                         run = paragraph.add_run(text[i])
                         i += 1
-                    
+                        
     # === Split paragraphs by blocks ===
     blocks = {}
     current_block = None
     for para in doc.paragraphs:
         text = para.text.strip()
         block_header = re.match(r"^Блок(\d+)", text)
+        #block_header = {}
         if block_header:
             current_block = f"Блок{block_header.group(1)}"
             blocks[current_block] = []
@@ -177,7 +178,7 @@ if uploaded_file:
     # === Process blocks with specific styles ===
 
     for block, paragraphs in blocks.items():
-        formatted_doc.add_paragraph(block).runs[0].font.color.rgb = RGBColor(255, 0, 0)  # Red block header
+        #formatted_doc.add_paragraph(block).runs[0].font.color.rgb = RGBColor(255, 0, 0)  # Red block header
 
         if block == "Блок1":
             text = "ПОЯСНИТЕЛЬНАЯ ЗАПИСКА"
@@ -485,12 +486,13 @@ if uploaded_file:
                         p = formatted_doc.add_paragraph()
                         pf = p.paragraph_format
 
-                        font = p.add_run().font
-                        font.highlight_color = WD_COLOR_INDEX.GRAY_50
+                        # font = p.add_run().font
+                        # font.highlight_color = WD_COLOR_INDEX.GRAY_50
+                        
                         # Висячий отступ
-                        pf.left_indent = Inches(0.5)
-                        pf.first_line_indent = Inches(-0.5)
-
+                        pf.left_indent = Inches(0.3)
+                        pf.first_line_indent = Inches(-0.3)
+                        pf.tab_stops.add_tab_stop(Inches(0.3), WD_TAB_ALIGNMENT.LEFT)
                         # Прочее форматирование
                         pf.space_before = Pt(0)
                         pf.space_after = Pt(3)
@@ -499,7 +501,7 @@ if uploaded_file:
                         pf.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
 
                         # Добавляем tab stop (необязательно, но полезно для ручного редактирования)
-                        pf.tab_stops.add_tab_stop(Inches(1.0), WD_TAB_ALIGNMENT.LEFT)
+                        #pf.tab_stops.add_tab_stop(Inches(0.3), WD_TAB_ALIGNMENT.LEFT)
 
                         # Добавляем тире, табуляцию и текст
                         run = p.add_run("–\t" + desc.strip())
@@ -517,14 +519,19 @@ if uploaded_file:
                     font.highlight_color = WD_COLOR_INDEX.GRAY_50
                     
                     # Такой же висячий отступ для выравнивания
-                    pf.left_indent = Inches(0.5)
-                    pf.first_line_indent = Inches(-0.5)
+                    pf.left_indent = Inches(0.3)
+                    pf.first_line_indent = Inches(-0.3)
+                    #pf.left_indent = Inches(0.3)
+                    #pf.first_line_indent = Inches(-0.3)
+                    pf.tab_stops.add_tab_stop(Inches(0.3), WD_TAB_ALIGNMENT.LEFT)
+                    
                     pf.space_before = Pt(0)
                     pf.space_after = Pt(3)
                     pf.line_spacing = 1.0
                     pf.line_spacing_rule = WD_LINE_SPACING.SINGLE
                     pf.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
 
+                    #pf.tab_stops.add_tab_stop(Inches(0.3), WD_TAB_ALIGNMENT.LEFT)
                     run = p.add_run("\t" + para.strip())
                     run.font.name = 'Times New Roman'
                     run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
@@ -703,7 +710,14 @@ if uploaded_file:
             for para in paragraphs:
                 if para:
                     p = formatted_doc.add_paragraph(para, style='List Number') 
-                    set_format(p)
+                   # set_format(p)
+                    run = p.runs[0] if p.runs else p.add_run()
+                    font = run.font
+                    font.name = 'Times New Roman'
+                    font.size = Pt(12)
+                    font.bold = False
+                    font.color.rgb = RGBColor(0, 0, 0)
+                    p.paragraph_format.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
                     apply_typographic_fixes(p.text)
 
         else:
