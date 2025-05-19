@@ -16,6 +16,13 @@ if uploaded_file:
     doc = Document(uploaded_file)
     formatted_doc = Document()
 
+    def shade_paragraph(paragraph, color="D9D9D9"):
+        p_pr = paragraph._element.get_or_add_pPr()
+        shd = OxmlElement('w:shd')
+        shd.set(qn('w:val'), 'clear')
+        shd.set(qn('w:color'), 'auto')
+        shd.set(qn('w:fill'), color)
+        p_pr.append(shd)
     def apply_format(paragraph, font_size, bold, align, spacing_after=3, spacing_before=0):
         run = paragraph.runs[0] if paragraph.runs else paragraph.add_run()
         font = run.font
@@ -275,6 +282,11 @@ if uploaded_file:
                 if para.strip() == "Основание выноса вопроса на рассмотрение Советом директоров":
                     font.bold = True
                 
+                pf = p.paragraph_format
+                pf.space_before = Pt(0)
+                pf.space_after = Pt(2)  # Уменьшает расстояние после строки
+                pf.line_spacing = 1.0 
+                shade_paragraph(p)
                 
         elif block == "Блок4":
             for para in paragraphs: 
@@ -459,6 +471,7 @@ if uploaded_file:
                 run.font.name = 'Times New Roman'
                 run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
                 run.font.size = Pt(11)
+                shade_paragraph(first_para)
             for para in paragraphs[1:]:
     # Проверка на наличие тире
                 if "–" in para or "-" in para:
@@ -472,6 +485,8 @@ if uploaded_file:
                         p = formatted_doc.add_paragraph()
                         pf = p.paragraph_format
 
+                        font = p.add_run().font
+                        font.highlight_color = WD_COLOR_INDEX.GRAY_50
                         # Висячий отступ
                         pf.left_indent = Inches(0.5)
                         pf.first_line_indent = Inches(-0.5)
@@ -491,12 +506,16 @@ if uploaded_file:
                         run.font.name = 'Times New Roman'
                         run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
                         run.font.size = Pt(11)
-
+                        #run.font.highlight_color = WD_COLOR_INDEX.GRAY_50
+                        shade_paragraph(p)
                 else:
                     # Абзац без тире — просто отформатированный
                     p = formatted_doc.add_paragraph()
                     pf = p.paragraph_format
-
+                    
+                    font = p.add_run().font
+                    font.highlight_color = WD_COLOR_INDEX.GRAY_50
+                    
                     # Такой же висячий отступ для выравнивания
                     pf.left_indent = Inches(0.5)
                     pf.first_line_indent = Inches(-0.5)
@@ -510,7 +529,8 @@ if uploaded_file:
                     run.font.name = 'Times New Roman'
                     run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
                     run.font.size = Pt(11)
-
+                    #run.font.highlight_color = WD_COLOR_INDEX.GRAY_50
+                    shade_paragraph(p)
         # elif block == "Блок7":
         #     for para in paragraphs:
         #         formatted_doc.add_paragraph()
@@ -557,7 +577,7 @@ if uploaded_file:
                     run.font.name = 'Times New Roman'
                     run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
                     run.font.size = Pt(11)
-
+                    shade_paragraph(p)
                 else:
                     p = formatted_doc.add_paragraph()
                     pf = p.paragraph_format
@@ -573,7 +593,7 @@ if uploaded_file:
                     run.font.name = 'Times New Roman'
                     run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
                     run.font.size = Pt(11)
-                    
+                    shade_paragraph(p)
         elif block == "Блок8":
             
             # bold_words = ["Председатель Правления", "Заместитель Председателя Правления", "Советник Председателя Правления", "Управляющий директор", "ПМ"]  # add as needed
