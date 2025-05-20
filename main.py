@@ -161,6 +161,17 @@ if uploaded_file:
         shd.set(qn('w:fill'), fill_color)  # e.g., 'FFFF00' for yellow
         rPr.append(shd)
 
+    def clear_headers_and_footers(doc: Document):
+        for section in doc.sections:
+            # Очистка верхнего колонтитула
+            header = section.header
+            for para in header.paragraphs:
+                para.clear()
+
+            # Очистка нижнего колонтитула
+            footer = section.footer
+            for para in footer.paragraphs:
+                para.clear()
     def bold_keywords(paragraph, keywords):
         for keyword in keywords:
             if keyword in paragraph.text:
@@ -193,6 +204,8 @@ if uploaded_file:
     # === Split paragraphs by blocks ===
     blocks = {}
     current_block = None
+    
+    clear_headers_and_footers(doc)
     for para in doc.paragraphs:
         text = para.text.strip()
         #text = clean_text_extended(para.text.strip())
