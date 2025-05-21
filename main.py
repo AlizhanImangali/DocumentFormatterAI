@@ -906,6 +906,10 @@ if uploaded_file:
                 font.name = 'Times New Roman'
                 font.size = Pt(11)
                 font.bold = True
+                
+                pf = p.paragraph_format
+                pf.space_before = Pt(0)
+                pf.space_after =  Pt(3)
                 for para in paragraphs:
                     para = clean_text(para)
                     if para:
