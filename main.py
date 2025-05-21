@@ -16,6 +16,62 @@ if uploaded_file:
     doc = Document(uploaded_file)
     formatted_doc = Document()
     
+    sections = doc.sections
+    formatted_sections = formatted_doc.sections
+    for fsection in formatted_doc.sections:
+        fsection.top_margin = Inches(1)
+        fsection.bottom_margin = Inches(1)
+        fsection.left_margin = Inches(1)
+        fsection.right_margin = Inches(1)
+        
+    for section in doc.sections:
+        section.top_margin = Inches(1)
+        section.bottom_margin = Inches(1)
+        section.left_margin = Inches(1)
+        section.right_margin = Inches(1)
+    # for i, section in enumerate(doc.sections):
+    #     top = section.top_margin.inches
+    #     bottom = section.bottom_margin.inches
+    #     left = section.left_margin.inches
+    #     right = section.right_margin.inches
+    #     print(top)
+    #     print(bottom)
+    #     print(left)
+    #     print(right)
+    #     section.top_margin = Inches(1)
+    #     section.bottom_margin = Inches(1)
+    #     section.left_margin = Inches(1)
+    #     section.right_margin = Inches(1)
+    def insert_page_numbers_except_first(document):
+        for section in document.sections:
+            # Enable different first page
+            section.different_first_page_header_footer = True
+
+            # Get footer for all pages except first
+            footer = section.footer
+            paragraph = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+            paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+
+            # Add only the page number field { PAGE }
+            run = paragraph.add_run()
+
+            fldChar1 = OxmlElement('w:fldChar')
+            fldChar1.set(qn('w:fldCharType'), 'begin')
+
+            instrText = OxmlElement('w:instrText')
+            instrText.set(qn('xml:space'), 'preserve')
+            instrText.text = 'PAGE'
+
+            fldChar2 = OxmlElement('w:fldChar')
+            fldChar2.set(qn('w:fldCharType'), 'separate')
+
+            fldChar3 = OxmlElement('w:fldChar')
+            fldChar3.set(qn('w:fldCharType'), 'end')
+
+            run._r.append(fldChar1)
+            run._r.append(instrText)
+            run._r.append(fldChar2)
+            run._r.append(fldChar3)
     def clean_text(text):
         text = re.sub(r'\s+', ' ', text)  # Replace multiple spaces/newlines with a single space
         return text.strip()
@@ -198,8 +254,8 @@ if uploaded_file:
         for para in doc.paragraphs
         if clean_text_extended(para.text)  # filters out empty ones
     ]
-    for i, para in enumerate(cleaned_paragraphs):
-        print(f"{i+1}. {para}")
+    # for i, para in enumerate(cleaned_paragraphs):
+    #     print(f"{i+1}. {para}")
         
     # === Split paragraphs by blocks ===
     blocks = {}
@@ -222,7 +278,7 @@ if uploaded_file:
             blocks[current_block] = []
         elif current_block:
             blocks[current_block].append(text)
-
+    #insert_page_numbers_except_first(doc)
     # === Process blocks with specific styles ===
     if doc.paragraphs and doc.paragraphs[0].text.strip() == "ПОЯСНИТЕЛЬНАЯ ЗАПИСКА":
         for block, paragraphs in blocks.items():
@@ -230,7 +286,6 @@ if uploaded_file:
 
             if block == "Блок1":
                 text = "ПОЯСНИТЕЛЬНАЯ ЗАПИСКА"
-                formatted_doc.add_paragraph
                 p = formatted_doc.add_paragraph()
                 run = p.add_run(text)
                 set_character_spacing(run,60)
@@ -266,7 +321,8 @@ if uploaded_file:
                             p.add_run(desc.strip())
                             set_format(p, 11)
                             apply_format(p,11,False,WD_PARAGRAPH_ALIGNMENT.LEFT)
-
+                formatted_doc.add_paragraph()
+                #formatted_doc.add_paragraph()
             # elif block == "Блок3":
             #     #lines_to_merge = []
             #     #for p in doc.paragraphs:
@@ -299,6 +355,7 @@ if uploaded_file:
             #         if p.text == "Основание выноса вопроса на рассмотрение Советом директоров":
             #             font.bold = True
             elif block == "Блок3":
+                
                 # table = formatted_doc.add_table(rows=1, cols=1)
                 # cell = table.cell(0, 0)
                 # set_cell_shading(cell, 'D9D9D9')
@@ -323,6 +380,7 @@ if uploaded_file:
                 #     if para.strip() == "Основание выноса вопроса на рассмотрение Советом директоров":
                 #         font.bold = True
                 for para in paragraphs: 
+                    #formatted_doc.add_paragraph()
                     para = clean_text(para)
                     p = formatted_doc.add_paragraph(para)
                     run = p.add_run()
@@ -345,6 +403,7 @@ if uploaded_file:
             elif block == "Блок4":
                 for para in paragraphs: 
                     para = clean_text(para)
+                    formatted_doc.add_paragraph()
                     p = formatted_doc.add_paragraph(para)
                     run = p.add_run()
                     run = p.runs[0] if p.runs else p.add_run()
@@ -607,6 +666,17 @@ if uploaded_file:
             #             p = formatted_doc.add_paragraph(para)
             #         set_format(p)
             elif block == "Блок7":
+                #* * *
+                text = "* * *"
+                ps = formatted_doc.add_paragraph(text)
+                psf = ps.paragraph_format
+                psf.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                
+                runf = ps.runs[0]
+                runf.font.name = 'Times New Roman'
+                runf._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+                runf.font.size = Pt(12)
+                
                 for idx, para in enumerate(paragraphs):
                     #para = clean_text(para)
                     if idx == 0:
@@ -622,7 +692,7 @@ if uploaded_file:
                         run = p.add_run(para.strip())
                         run.font.name = 'Times New Roman'
                         run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
-                        run.font.size = Pt(11)
+                        run.font.size = Pt(12)
                         continue  # переходим к следующему абзацу
 
                     # Далее — обычная обработка
@@ -651,7 +721,7 @@ if uploaded_file:
                         run = p.add_run( numbered_text)
                         run.font.name = 'Times New Roman'
                         run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
-                        run.font.size = Pt(11)
+                        run.font.size = Pt(12)
                         shade_paragraph(p)
                     else:
                         p = formatted_doc.add_paragraph()
@@ -667,7 +737,7 @@ if uploaded_file:
                         run = p.add_run("\t" + para.strip())
                         run.font.name = 'Times New Roman'
                         run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
-                        run.font.size = Pt(11)
+                        run.font.size = Pt(12)
                         shade_paragraph(p)
             elif block == "Блок8":
                 
@@ -773,7 +843,11 @@ if uploaded_file:
                     "Управляющий директор", 
                     "ПМ"
                 ]
-
+                formatted_doc.add_paragraph()
+                formatted_doc.add_paragraph()
+                formatted_doc.add_paragraph()
+                formatted_doc.add_paragraph()
+                formatted_doc.add_paragraph()
                 for para in paragraphs:
                     para = para.strip()
                     matched_role = None
@@ -817,13 +891,14 @@ if uploaded_file:
                         p.paragraph_format.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
 
             elif block == "Блок9":
+                formatted_doc.add_paragraph()
                 for para in paragraphs: 
                     para = clean_text(para)
                     if para:
                         p = formatted_doc.add_paragraph()
                         run = p.add_run(para)
                         apply_format(p,10,False,WD_PARAGRAPH_ALIGNMENT.LEFT)
-
+                formatted_doc.add_paragraph()
             elif block == "Блок10":
                 p = formatted_doc.add_paragraph()
                 run = p.add_run("Приложения")
@@ -857,7 +932,14 @@ if uploaded_file:
         # === Save result ===
         #formatted_doc.save(output_path)
         #print(f"✅ Reformatted document saved to: {output_path}")
-        buffer = io.BytesIO()
-        formatted_doc.save(buffer)
-        buffer.seek(0)
-        st.download_button("Download Reformatted DOCX", data=buffer, file_name="Reformatted_Change.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    if doc.paragraphs and doc.paragraphs[0].text.strip() == "БЮЛЛИТЕНЬ":
+        
+        
+        
+        print("here")
+    insert_page_numbers_except_first(formatted_doc)
+    insert_page_numbers_except_first(doc)
+    buffer = io.BytesIO()
+    formatted_doc.save(buffer)
+    buffer.seek(0)
+    st.download_button("Download Reformatted DOCX", data=buffer, file_name="Reformatted_Change.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
