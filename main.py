@@ -111,6 +111,8 @@ if uploaded_file:
         pf.alignment = align
         pf.space_after = Pt(spacing_after)
         pf.space_before = Pt(spacing_before)
+        
+        pf.line_spacing_rule = WD_LINE_SPACING.MULTIPLE  # <--- обязательно добавьте эту строку
         pf.line_spacing = 1.0  
        # pf.line_spacing = Pt(12)
 
@@ -292,11 +294,16 @@ if uploaded_file:
                 apply_format(p,14,True,WD_PARAGRAPH_ALIGNMENT.CENTER)
                 for para in paragraphs:
                     para = clean_text(para)
-                   # print(para)
                     p = formatted_doc.add_paragraph(para)
                     set_format(p, 12, True, WD_PARAGRAPH_ALIGNMENT.CENTER)
                     apply_typographic_fixes(p.text)
+                    pf = p.paragraph_format
+                    pf.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+                    pf.line_spacing = 1.0
+                    pf.space_before = Pt(0)
+                    pf.space_after = Pt(6)
             elif block == "Блок2":
+                formatted_doc.add_paragraph()
                 text = "Условные (сокращенные) обозначения, использованные в пояснительной записке"
                 p = formatted_doc.add_paragraph()
                 run = p.add_run(text)
@@ -401,9 +408,9 @@ if uploaded_file:
                     shade_paragraph(p)
                     
             elif block == "Блок4":
+                formatted_doc.add_paragraph()
                 for para in paragraphs: 
                     para = clean_text(para)
-                    formatted_doc.add_paragraph()
                     p = formatted_doc.add_paragraph(para)
                     run = p.add_run()
                     run = p.runs[0] if p.runs else p.add_run()
@@ -414,10 +421,9 @@ if uploaded_file:
                     font.bold = False
                     font.color.rgb = RGBColor(0, 0, 0)
 
-
                     pf = p.paragraph_format
                     pf.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
-                    pf.space_after = Pt(6)
+                    pf.space_after = Pt(0)
                     pf.space_before = Pt(0)
                     pf.line_spacing_rule = WD_LINE_SPACING.SINGLE
                     #set_shading(run, 'D9D9D9')
