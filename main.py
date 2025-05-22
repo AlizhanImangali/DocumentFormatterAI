@@ -999,7 +999,19 @@ if uploaded_file:
                         p = formatted_doc.add_paragraph()
                         run = p.add_run(para)
                         apply_format(p,10,False,WD_PARAGRAPH_ALIGNMENT.LEFT)
-                formatted_doc.add_paragraph()
+                emptyLine = formatted_doc.add_paragraph()
+                # run = emptyLine.add_run(" ")  # Add a space to ensure formatting applies
+                # font = run.font
+                # font.name = 'Times New Roman'
+                # run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+                # font.size = Pt(12)
+                force_font_on_paragraph(emptyLine)
+
+                parEmptyLine = emptyLine.paragraph_format
+                parEmptyLine.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+                parEmptyLine.line_spacing = 1.0
+                parEmptyLine.space_before = Pt(0)
+                parEmptyLine.space_after = Pt(0)
             elif block == "Блок10":
                 emptyLine = formatted_doc.add_paragraph()
                 # run = emptyLine.add_run(" ")  # Add a space to ensure formatting applies
