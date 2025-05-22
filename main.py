@@ -42,6 +42,22 @@ if uploaded_file:
     #     section.bottom_margin = Inches(1)
     #     section.left_margin = Inches(1)
     #     section.right_margin = Inches(1)
+    def force_font_on_paragraph(paragraph, font_name="Times New Roman", size=12):
+        run = paragraph.add_run(" ")
+        font = run.font
+        font.name = font_name
+        run._element.rPr.rFonts.set(qn('w:eastAsia'), font_name)
+        font.size = Pt(size)
+        
+        # Force paragraph style manually if needed
+        rPr = run._element.get_or_add_rPr()
+        rFonts = OxmlElement('w:rFonts')
+        rFonts.set(qn('w:ascii'), font_name)
+        rFonts.set(qn('w:hAnsi'), font_name)
+        rFonts.set(qn('w:eastAsia'), font_name)
+        rFonts.set(qn('w:cs'), font_name)
+        rPr.append(rFonts)
+
     def insert_page_numbers_except_first(document):
         for section in document.sections:
             # Enable different first page
@@ -290,8 +306,14 @@ if uploaded_file:
                 text = "ПОЯСНИТЕЛЬНАЯ ЗАПИСКА"
                 p = formatted_doc.add_paragraph()
                 run = p.add_run(text)
-                set_character_spacing(run,60)
+                set_character_spacing(run,100)
                 apply_format(p,14,True,WD_PARAGRAPH_ALIGNMENT.CENTER)
+                pf = p.paragraph_format
+                pf.line_spacing_rule = WD_LINE_SPACING.SINGLE
+                pf.line_spacing = 1.0
+                pf.space_before = Pt(0)
+                pf.space_after = Pt(6)
+                
                 for para in paragraphs:
                     para = clean_text(para)
                     p = formatted_doc.add_paragraph(para)
@@ -301,9 +323,23 @@ if uploaded_file:
                     pf.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
                     pf.line_spacing = 1.0
                     pf.space_before = Pt(0)
-                    pf.space_after = Pt(6)
+                    pf.space_after = Pt(0)
             elif block == "Блок2":
-                formatted_doc.add_paragraph()
+                # add 
+                emptyLine = formatted_doc.add_paragraph()
+                # run = emptyLine.add_run(" ")
+                # font = run.font
+                # font.name = 'Times New Roman'
+                # run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+                # font.size = Pt(12)
+                force_font_on_paragraph(emptyLine)
+                
+                parEmptyLine = emptyLine.paragraph_format
+                parEmptyLine.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+                parEmptyLine.line_spacing = 1.0
+                parEmptyLine.space_before = Pt(0)
+                parEmptyLine.space_after = Pt(0)
+                
                 text = "Условные (сокращенные) обозначения, использованные в пояснительной записке"
                 p = formatted_doc.add_paragraph()
                 run = p.add_run(text)
@@ -328,7 +364,19 @@ if uploaded_file:
                             p.add_run(desc.strip())
                             set_format(p, 11)
                             apply_format(p,11,False,WD_PARAGRAPH_ALIGNMENT.LEFT)
-                formatted_doc.add_paragraph()
+                emptyLine = formatted_doc.add_paragraph()
+                # run = emptyLine.add_run(" ")
+                # font = run.font
+                # font.name = 'Times New Roman'
+                # run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+                # font.size = Pt(12)
+                force_font_on_paragraph(emptyLine)
+                
+                parEmptyLine = emptyLine.paragraph_format
+                parEmptyLine.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+                parEmptyLine.line_spacing = 1.0
+                parEmptyLine.space_before = Pt(0)
+                parEmptyLine.space_after = Pt(0)
                 #formatted_doc.add_paragraph()
             # elif block == "Блок3":
             #     #lines_to_merge = []
@@ -408,7 +456,20 @@ if uploaded_file:
                     shade_paragraph(p)
                     
             elif block == "Блок4":
-                formatted_doc.add_paragraph()
+                emptyLine = formatted_doc.add_paragraph()
+                # run = emptyLine.add_run(" ")
+                # font = run.font
+                # font.name = 'Times New Roman'
+                # run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+                # font.size = Pt(12)
+                force_font_on_paragraph(emptyLine)
+                
+                parEmptyLine = emptyLine.paragraph_format
+                parEmptyLine.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+                parEmptyLine.line_spacing = 1.0
+                parEmptyLine.space_before = Pt(0)
+                parEmptyLine.space_after = Pt(0)
+                
                 for para in paragraphs: 
                     para = clean_text(para)
                     p = formatted_doc.add_paragraph(para)
@@ -427,7 +488,19 @@ if uploaded_file:
                     pf.space_before = Pt(0)
                     pf.line_spacing_rule = WD_LINE_SPACING.SINGLE
                     #set_shading(run, 'D9D9D9')
-
+                emptyLine = formatted_doc.add_paragraph()
+                # run = emptyLine.add_run(" ")
+                # font = run.font
+                # font.name = 'Times New Roman'
+                # run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+                # font.size = Pt(12)
+                force_font_on_paragraph(emptyLine)
+                
+                parEmptyLine = emptyLine.paragraph_format
+                parEmptyLine.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+                parEmptyLine.line_spacing = 1.0
+                parEmptyLine.space_before = Pt(0)
+                parEmptyLine.space_after = Pt(0)
             # elif block == "Блок5":
             #     for para in paragraphs: 
                         
@@ -849,11 +922,21 @@ if uploaded_file:
                     "Управляющий директор", 
                     "ПМ"
                 ]
-                formatted_doc.add_paragraph()
-                formatted_doc.add_paragraph()
-                formatted_doc.add_paragraph()
-                formatted_doc.add_paragraph()
-                formatted_doc.add_paragraph()
+                for _ in range(5):
+                    emptyLine = formatted_doc.add_paragraph()
+                    # run = emptyLine.add_run(" ")  # Add a space to ensure formatting applies
+                    # font = run.font
+                    # font.name = 'Times New Roman'
+                    # run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+                    # font.size = Pt(12)
+                    force_font_on_paragraph(emptyLine)
+
+                    parEmptyLine = emptyLine.paragraph_format
+                    parEmptyLine.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+                    parEmptyLine.line_spacing = 1.0
+                    parEmptyLine.space_before = Pt(0)
+                    parEmptyLine.space_after = Pt(0)
+                    
                 for para in paragraphs:
                     para = para.strip()
                     matched_role = None
@@ -897,7 +980,19 @@ if uploaded_file:
                         p.paragraph_format.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
 
             elif block == "Блок9":
-                formatted_doc.add_paragraph()
+                emptyLine = formatted_doc.add_paragraph()
+                # run = emptyLine.add_run(" ")  # Add a space to ensure formatting applies
+                # font = run.font
+                # font.name = 'Times New Roman'
+                # run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+                # font.size = Pt(12)
+                force_font_on_paragraph(emptyLine)
+
+                parEmptyLine = emptyLine.paragraph_format
+                parEmptyLine.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+                parEmptyLine.line_spacing = 1.0
+                parEmptyLine.space_before = Pt(0)
+                parEmptyLine.space_after = Pt(0)
                 for para in paragraphs: 
                     para = clean_text(para)
                     if para:
@@ -906,7 +1001,20 @@ if uploaded_file:
                         apply_format(p,10,False,WD_PARAGRAPH_ALIGNMENT.LEFT)
                 formatted_doc.add_paragraph()
             elif block == "Блок10":
-                p = formatted_doc.add_paragraph()
+                emptyLine = formatted_doc.add_paragraph()
+                # run = emptyLine.add_run(" ")  # Add a space to ensure formatting applies
+                # font = run.font
+                # font.name = 'Times New Roman'
+                # run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+                # font.size = Pt(12)
+                force_font_on_paragraph(emptyLine)
+
+                parEmptyLine = emptyLine.paragraph_format
+                parEmptyLine.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+                parEmptyLine.line_spacing = 1.0
+                parEmptyLine.space_before = Pt(0)
+                parEmptyLine.space_after = Pt(0)
+                
                 run = p.add_run("Приложения")
                 font = run.font
                 font.name = 'Times New Roman'
