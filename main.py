@@ -670,13 +670,15 @@ if uploaded_file:
                 for para in paragraphs[1:]:
         # Проверка на наличие тире
                     para = clean_text(para)
-                    if "–" in para or "-" in para:
-                        dash = "–" if "–" in para else "-"
-                        parts = para.split(dash, 1)
+                    match = re.match(r"^[–\-]\s*(.*)", para.strip())
+                    # if "–" in para or "-" in para:
+                    #     dash = "–" if "–" in para else "-"
+                    #     parts = para.split(dash, 1)
 
-                        if len(parts) == 2:
-                            term, desc = parts
-
+                    #     if len(parts) == 2:
+                    #         term, desc = parts
+                    if match:
+                            desc = match.group(1)
                             # Создаем абзац
                             p = formatted_doc.add_paragraph()
                             pf = p.paragraph_format
@@ -917,10 +919,9 @@ if uploaded_file:
             #------------------------------------------------
                 bold_words = [
                     "Председатель Правления", 
-                    "Заместитель Председателя Правления", 
-                    "Советник Председателя Правления", 
+                    "Заместитель председателя Правления", 
+                    "Советник председателя Правления", 
                     "Управляющий директор", 
-                    "ПМ"
                 ]
                 for _ in range(5):
                     emptyLine = formatted_doc.add_paragraph()
@@ -1012,22 +1013,24 @@ if uploaded_file:
                 parEmptyLine.line_spacing = 1.0
                 parEmptyLine.space_before = Pt(0)
                 parEmptyLine.space_after = Pt(0)
-            elif block == "Блок10":
-                emptyLine = formatted_doc.add_paragraph()
-                # run = emptyLine.add_run(" ")  # Add a space to ensure formatting applies
-                # font = run.font
-                # font.name = 'Times New Roman'
-                # run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
-                # font.size = Pt(12)
-                force_font_on_paragraph(emptyLine)
-
-                parEmptyLine = emptyLine.paragraph_format
-                parEmptyLine.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
-                parEmptyLine.line_spacing = 1.0
-                parEmptyLine.space_before = Pt(0)
-                parEmptyLine.space_after = Pt(0)
                 
-                run = p.add_run("Приложения")
+            elif block == "Блок10":
+                # emptyLine = formatted_doc.add_paragraph()
+                # # run = emptyLine.add_run(" ")  # Add a space to ensure formatting applies
+                # # font = run.font
+                # # font.name = 'Times New Roman'
+                # # run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+                # # font.size = Pt(12)
+                # force_font_on_paragraph(emptyLine)
+
+                # parEmptyLine = emptyLine.paragraph_format
+                # parEmptyLine.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+                # parEmptyLine.line_spacing = 1.0
+                # parEmptyLine.space_before = Pt(0)
+                # parEmptyLine.space_after = Pt(0)
+                
+                p = formatted_doc.add_paragraph()
+                run = p.add_run("Приложение")
                 font = run.font
                 font.name = 'Times New Roman'
                 font.size = Pt(11)
