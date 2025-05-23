@@ -746,12 +746,32 @@ if uploaded_file:
             #         else:
             #             p = formatted_doc.add_paragraph(para)
             #         set_format(p)
+            elif block == "Блок6":
+                for para in paragraphs: 
+                    para = clean_text(para)
+                    ps = formatted_doc.add_paragraph(para)
+                    psf = ps.paragraph_format
+                    psf.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+                    psf.space_before = Pt(0)
+                    psf.space_after = Pt(0)
+                    psf.spacing = 1.0
+                    psf.line_spacing_rule = WD_LINE_SPACING.SINGLE
+                            
+                    runf = ps.runs[0]
+                    runf.font.name = 'Times New Roman'
+                    runf._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+                    runf.font.size = Pt(12)
+            
+                
+                
             elif block == "Блок7":
                 #* * *
                 text = "* * *"
                 ps = formatted_doc.add_paragraph(text)
                 psf = ps.paragraph_format
                 psf.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                psf.space_before = Pt(0)
+                psf.space_after = Pt(6)
                 
                 runf = ps.runs[0]
                 runf.font.name = 'Times New Roman'
