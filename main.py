@@ -177,8 +177,11 @@ if uploaded_file:
 
     def apply_typographic_fixes(text):
         # 1. Non-breaking space after №
-        text = text.replace("№ ", "№\u00A0")
-
+        # text = text.replace("№ ", "№\u00A0")  
+        # text = text.replace("№", "№\u00A0")
+        # text = re.sub(r'№\s*(\d+)', r'№\u00A0\1', text)
+        nbsp = "\u00A0"  # non-breaking space
+        text = re.sub(r'№\s*(\d+)', f'№{nbsp}\\1', text)
         # 2. Non-breaking space between day and month (using raw string pattern, regular string replacement)
         text = re.sub(
             r'\b(\d{1,2})\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\b',
@@ -187,7 +190,7 @@ if uploaded_file:
         )
 
         # 3. Move 1–2 letter word from end of line to start of next
-        text = move_short_words_to_next_line(text)
+        #text = move_short_words_to_next_line(text)
 
         return text
 
@@ -306,7 +309,7 @@ if uploaded_file:
                 text = "ПОЯСНИТЕЛЬНАЯ ЗАПИСКА"
                 p = formatted_doc.add_paragraph()
                 run = p.add_run(text)
-                set_character_spacing(run,100)
+                set_character_spacing(run,60)
                 apply_format(p,14,True,WD_PARAGRAPH_ALIGNMENT.CENTER)
                 pf = p.paragraph_format
                 pf.line_spacing_rule = WD_LINE_SPACING.SINGLE
@@ -316,9 +319,11 @@ if uploaded_file:
                 
                 for para in paragraphs:
                     para = clean_text(para)
+                    #para = para.replace("№", "№\u00A0")
                     p = formatted_doc.add_paragraph(para)
+                    p.text = apply_typographic_fixes(p.text)
                     set_format(p, 12, True, WD_PARAGRAPH_ALIGNMENT.CENTER)
-                    apply_typographic_fixes(p.text)
+                    
                     pf = p.paragraph_format
                     pf.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
                     pf.line_spacing = 1.0
@@ -349,14 +354,14 @@ if uploaded_file:
                     if "–" in para or "-" in para:
                         p = formatted_doc.add_paragraph(para)
                         set_format(p, 11, False)
-                        apply_typographic_fixes(p.text)
+                        p.text = apply_typographic_fixes(p.text)
                         apply_format(p,11,False,WD_PARAGRAPH_ALIGNMENT.LEFT)
                     else:
                         parts = para.split("–", 1)
                         if len(parts) == 2:
                             term, desc = parts
                             p = formatted_doc.add_paragraph()
-                            apply_typographic_fixes(p.text)
+                            p.text = apply_typographic_fixes(p.text)
                             run = p.add_run(term.strip() + " – ")
                             run.bold = True
                             run.font.name = 'Times New Roman'
@@ -473,6 +478,7 @@ if uploaded_file:
                 for para in paragraphs: 
                     para = clean_text(para)
                     p = formatted_doc.add_paragraph(para)
+                    p.text = apply_typographic_fixes(p.text)
                     run = p.add_run()
                     run = p.runs[0] if p.runs else p.add_run()
                     font = run.font
@@ -670,6 +676,7 @@ if uploaded_file:
                 for para in paragraphs[1:]:
         # Проверка на наличие тире
                     para = clean_text(para)
+                    para = apply_typographic_fixes(para)
                     match = re.match(r"^[–\-]\s*(.*)", para.strip())
                     # if "–" in para or "-" in para:
                     #     dash = "–" if "–" in para else "-"
@@ -749,7 +756,9 @@ if uploaded_file:
             elif block == "Блок6":
                 for para in paragraphs: 
                     para = clean_text(para)
+                    para = apply_typographic_fixes(para)
                     ps = formatted_doc.add_paragraph(para)
+                    
                     psf = ps.paragraph_format
                     psf.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
                     psf.space_before = Pt(0)
@@ -782,6 +791,8 @@ if uploaded_file:
                 
                 for idx, para in enumerate(paragraphs):
                     #para = clean_text(para)
+                    para = clean_text(para)
+                    para = apply_typographic_fixes(para)
                     if idx == 0:
                         # Первый параграф (вступление) — без табуляции и висячего отступа
                         p = formatted_doc.add_paragraph()
@@ -828,6 +839,7 @@ if uploaded_file:
                         shade_paragraph(p)
                     else:
                         p = formatted_doc.add_paragraph()
+                        
                         pf = p.paragraph_format
                         pf.left_indent = Inches(0.5)
                         pf.first_line_indent = Inches(0.5)
@@ -973,7 +985,7 @@ if uploaded_file:
                     if matched_role:
                         name = para[len(matched_role):].strip()  # extract the rest as name
                         p = formatted_doc.add_paragraph()
-
+                        p.text = apply_typographic_fixes(p.text)
                         # Set tab stop
                         tab_stops = p.paragraph_format.tab_stops
                         tab_stops.add_tab_stop(Inches(4.5), alignment=WD_TAB_ALIGNMENT.LEFT)
@@ -996,6 +1008,7 @@ if uploaded_file:
                     else:
                         # No role matched — just output as is
                         p = formatted_doc.add_paragraph(para)
+                        p.text = apply_typographic_fixes(p.text)
                         run = p.runs[0] if p.runs else p.add_run()
                         run.font.name = "Times New Roman"
                         run.font.size = Pt(12)
@@ -1020,6 +1033,7 @@ if uploaded_file:
                     para = clean_text(para)
                     if para:
                         p = formatted_doc.add_paragraph()
+                        p.text = apply_typographic_fixes(p.text)
                         run = p.add_run(para)
                         apply_format(p,10,False,WD_PARAGRAPH_ALIGNMENT.LEFT)
                 emptyLine = formatted_doc.add_paragraph()
@@ -1066,6 +1080,7 @@ if uploaded_file:
                     if para:
                         p = formatted_doc.add_paragraph(para, style='List Number') 
                     # set_format(p)
+                        p.text = apply_typographic_fixes(p.text)
                         run = p.runs[0] if p.runs else p.add_run()
                         font = run.font
                         font.name = 'Times New Roman'
@@ -1073,8 +1088,7 @@ if uploaded_file:
                         font.bold = False
                         font.color.rgb = RGBColor(0, 0, 0)
                         p.paragraph_format.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
-                        apply_typographic_fixes(p.text)
-
+                        
             else:
                 for para in paragraphs:
                     para = clean_text(para)
