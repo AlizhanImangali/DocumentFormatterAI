@@ -753,7 +753,7 @@ if uploaded_file:
                     psf = ps.paragraph_format
                     psf.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
                     psf.space_before = Pt(0)
-                    psf.space_after = Pt(0)
+                    psf.space_after = Pt(6)
                     psf.spacing = 1.0
                     psf.line_spacing_rule = WD_LINE_SPACING.SINGLE
                             
@@ -772,7 +772,9 @@ if uploaded_file:
                 psf.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
                 psf.space_before = Pt(0)
                 psf.space_after = Pt(6)
-                
+                psf.spacing = 1.0
+                psf.line_spacing_rule = WD_LINE_SPACING.SINGLE
+                    
                 runf = ps.runs[0]
                 runf.font.name = 'Times New Roman'
                 runf._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
