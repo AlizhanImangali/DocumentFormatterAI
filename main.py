@@ -11,6 +11,8 @@ import io
 st.title("DOCX Formatter")
 uploaded_file = st.file_uploader("Upload your Word (.docx) file", type=["docx"])
 
+
+
 if uploaded_file:
 # Load document
     doc = Document(uploaded_file)
@@ -206,6 +208,9 @@ if uploaded_file:
         """
         return re.sub(r'^(\d+\.)\s+\d+\.\s+', r'\1 ', text)
 
+    def strip_manual_numbering(text):
+        return re.sub(r'^\s*(\d+[\.\)]|[-–]\s*\d+[\.\)]?)\s*', '', text)
+    
     def set_format(paragraph, size=12, bold=False, align=WD_PARAGRAPH_ALIGNMENT.LEFT):
         run = paragraph.runs[0] if paragraph.runs else paragraph.add_run()
         font = run.font
@@ -451,9 +456,10 @@ if uploaded_file:
                     run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
                     font.size = Pt(11)
                     font.bold = False
-                    if para.strip() == "Основание выноса вопроса на рассмотрение Советом директоров":
+                    # if para.strip() == "Основание выноса вопроса на рассмотрение Советом директоров":
+                    #     font.bold = True
+                    if para.strip().startswith("Основание"):
                         font.bold = True
-                    
                     pf = p.paragraph_format
                     pf.space_before = Pt(0)
                     pf.space_after = Pt(2)  # Уменьшает расстояние после строки
@@ -597,68 +603,12 @@ if uploaded_file:
             #             run = p.runs[0]
             #         else:
             #             run = p.add_run()
-
             #         # Настройка шрифта
             #         run.font.name = 'Times New Roman'
             #         run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
             #         run.font.size = Pt(11)
             elif block == "Блок5":
-                
-                # for para in paragraphs:
-                #     #para = apply_typographic_fixes(para)
-                #     # Обработка только если есть тире
-                #     if "–" in para or "-" in para:
-                #         dash = "–" if "–" in para else "-"
-                #         parts = para.split(dash, 1)
-                #         if len(parts) == 2:
-                #             term, desc = parts
-                #             p = formatted_doc.add_paragraph()
-                #             font = p.add_run().font
-                #             font.highlight_color = WD_COLOR_INDEX.GRAY_50
-                #             #tabs = p.paragraph_format.tab_stops
-                #             #tabs.add_tab_stop(Inches(1.0))
-                #             # Настройка абзаца
-                #             pf = p.paragraph_format
-                #            # pf.first_line_indent = Inches(0.3)                 # Отступ первой строки
-                #             pf.space_before = Pt(0)
-                #             pf.space_after = Pt(3)
-                #            # pf.left_indent = Inches(0.3)
-                #             pf.line_spacing = 1.0
-                #             pf.line_spacing_rule = WD_LINE_SPACING.SINGLE
-                #             pf.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
-
-                #             # Часть до тире
-                #             run1 = p.add_run(" –\t" + term.strip() )#+ " –\t" + desc.strip())
-                #             run1.font.name = 'Times New Roman'
-                #             run1._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
-                #             run1.font.size = Pt(11)
-                #             #run.font.bold = True
-
-                #             # Часть после тире
-                #             run2 = p.add_run(desc.strip())
-                #             run2.font.name = 'Times New Roman'
-                #             run2._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
-                #             run2.font.size = Pt(11)
-                #             #run2.font.bold = Falses
-                #     else:
-                #         # Без тире – обычный абзац
-                #         p = formatted_doc.add_paragraph(para)
-                #         pf = p.paragraph_format
-                #         #pf.first_line_indent = Inches(0.3)
-                #         pf.space_before = Pt(0)
-                #         pf.space_after = Pt(3)
-                #         pf.line_spacing = 1.0
-                #         pf.line_spacing_rule = WD_LINE_SPACING.SINGLE
-                #         pf.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
-
-                #         run = p.add_run()
-                #         run = p.runs[0] if p.runs else p.add_run()
-                #         run.text = para
-                #         run.font.name = 'Times New Roman'
-                #         run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
-                #         run.font.size = Pt(11)
                 if paragraphs:
-                    
                     first_para = formatted_doc.add_paragraph()
                     #first_para = clean_text(first_para)
                     pf = first_para.paragraph_format
@@ -678,21 +628,12 @@ if uploaded_file:
                     para = clean_text(para)
                     para = apply_typographic_fixes(para)
                     match = re.match(r"^[–\-]\s*(.*)", para.strip())
-                    # if "–" in para or "-" in para:
-                    #     dash = "–" if "–" in para else "-"
-                    #     parts = para.split(dash, 1)
-
-                    #     if len(parts) == 2:
-                    #         term, desc = parts
                     if match:
                             desc = match.group(1)
                             # Создаем абзац
                             p = formatted_doc.add_paragraph()
                             pf = p.paragraph_format
 
-                            # font = p.add_run().font
-                            # font.highlight_color = WD_COLOR_INDEX.GRAY_50
-                            
                             # Висячий отступ
                             pf.left_indent = Inches(0.3)
                             pf.first_line_indent = Inches(-0.3)
@@ -774,20 +715,27 @@ if uploaded_file:
                 
                 
             elif block == "Блок7":
-                #* * *
-                text = "* * *"
-                ps = formatted_doc.add_paragraph(text)
-                psf = ps.paragraph_format
-                psf.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-                psf.space_before = Pt(0)
-                psf.space_after = Pt(6)
-                psf.spacing = 1.0
-                psf.line_spacing_rule = WD_LINE_SPACING.SINGLE
-                    
-                runf = ps.runs[0]
-                runf.font.name = 'Times New Roman'
-                runf._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
-                runf.font.size = Pt(12)
+                first_nonempty = ""
+                for para in paragraphs:
+                    clean_para = para.strip().replace(" ", "").replace("*", "*")
+                    if clean_para:
+                        first_nonempty = para.strip()
+                        break
+
+                # Normalize and compare
+                normalized = re.sub(r"\s+", "", first_nonempty)
+                if normalized != "* * *":
+                    psf = ps.paragraph_format
+                    psf.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                    psf.space_before = Pt(0)
+                    psf.space_after = Pt(6)
+                    psf.spacing = 1.0
+                    psf.line_spacing_rule = WD_LINE_SPACING.SINGLE
+                        
+                    runf = ps.runs[0]
+                    runf.font.name = 'Times New Roman'
+                    runf._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+                    runf.font.size = Pt(12)
                 
                 for idx, para in enumerate(paragraphs):
                     #para = clean_text(para)
@@ -821,17 +769,11 @@ if uploaded_file:
                         pf.line_spacing_rule = WD_LINE_SPACING.SINGLE
                         pf.alignment = WD_PARAGRAPH_ALIGNMENT.JUSTIFY
                         
-                        # tab_stops = p.paragraph_format.tab_stops
-                        # tab_stops.add_tab_stop(Inches(1.0), alignment=WD_TAB_ALIGNMENT.LEFT)
-                       
                         numbered_text = fix_docx_numbering(para.strip())
                         numbered_text = re.sub(r"^(\d+\.)\s*", r"\1\t", numbered_text)
                         tab_stops = p.paragraph_format.tab_stops
                         tab_stops.add_tab_stop(Inches(1.0), alignment=WD_TAB_ALIGNMENT.LEFT)
                        
-                        #tab_stops = p.paragraph_format.tab_stops
-                #       #tab_stops.add_tab_stop(Inches(5.0), alignment=WD_TAB_ALIGNMENT.LEFT)
-                        
                         run = p.add_run( numbered_text)
                         run.font.name = 'Times New Roman'
                         run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
@@ -855,101 +797,6 @@ if uploaded_file:
                         run.font.size = Pt(12)
                         shade_paragraph(p)
             elif block == "Блок8":
-                
-                # bold_words = ["Председатель Правления", "Заместитель Председателя Правления", "Советник Председателя Правления", "Управляющий директор", "ПМ"]  # add as needed
-                # for para in paragraphs:
-                #     #p = formatted_doc.add_paragraph(para)
-                #     #bold_keywords(para, bold_words) 
-
-                #     parts = re.split(r"\t+|\s{2,}", para)
-                #     if len(parts) >= 2:
-                #         #add_signature_table(parts[0].strip(), parts[1].strip())
-                #         print(parts[0].strip())
-                #         print("parts")
-                #         print(parts[1].strip())
-                #         role = parts[0].strip()
-                #         name = parts[1].strip()
-                #         staff = [(role, name)]
-                #         print(len(staff))
-                #         for role, name in staff:
-                #             p = formatted_doc.add_paragraph()
-                #             #bold_keywords(p, bold_words)
-                            
-                #             # Add tab stop at 4 inches (adjust for your layout)
-                #             tab_stops = p.paragraph_format.tab_stops
-                #             tab_stops.add_tab_stop(Inches(5.0), alignment=WD_TAB_ALIGNMENT.LEFT)
-                            
-                #             # Add text with tab
-                #             run = p.add_run(f"{role}\t{name}")
-                            
-                #             # Set font to Times New Roman
-                #             run.font.name = "Times New Roman"
-                #             run.font.size = Pt(12)
-
-                #             if role in bold_words:
-                #                 run.bold = True
-                #             # Optional: Align left
-                #             p.paragraph_format.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
-
-                #     else:
-                #         p = formatted_doc.add_paragraph(para)
-                #         bold_keywords(p, bold_words)
-                #         set_format(p)
-                #--------------------------------------
-                # bold_words = [
-                #         "Председатель Правления", 
-                #         "Заместитель Председателя Правления", 
-                #         "Советник Председателя Правления", 
-                #         "Управляющий директор", 
-                #         "ПМ"
-                # ]
-
-                # for para in paragraphs:
-                #     #para = clean_text(para)
-                #     parts = re.split(r"\t+|\s{2,}", para)
-
-                #     if len(parts) >= 2:
-                #         role = parts[0].strip()
-                #         name = parts[1].strip()
-                #         p = formatted_doc.add_paragraph()
-
-                #         # Устанавливаем табуляцию
-                #         tab_stops = p.paragraph_format.tab_stops
-                #         tab_stops.add_tab_stop(Inches(4.5), alignment=WD_TAB_ALIGNMENT.LEFT)
-
-                #         # Добавляем роль с выборочным выделением жирным
-                #         i = 0
-                #         while i < len(role):
-                #             matched = False
-                #             for bw in bold_words:
-                #                 if role[i:].startswith(bw):
-                #                     run = p.add_run(bw)
-                #                     run.bold = True
-                #                     run.font.name = "Times New Roman"
-                #                     run.font.size = Pt(12)
-                #                     i += len(bw)
-                #                     matched = True
-                #                     break
-                #             if not matched:
-                #                 run = p.add_run(role[i])
-                #                 run.font.name = "Times New Roman"
-                #                 run.font.size = Pt(12)
-                #                 i += 1
-
-                #         # Добавляем табуляцию и имя
-                #         p.add_run("\t")
-                #         run_name = p.add_run(name)
-                #         run_name.font.name = "Times New Roman"
-                #         run_name.font.size = Pt(12)
-                #         run_name.font.bold = True
-                #         p.paragraph_format.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
-
-                #     else:
-                #         p = formatted_doc.add_paragraph(para)
-                #         run_name = p.add_run()
-                #         run_name.font.bold = True
-                #         bold_keywords(p, bold_words)
-                #         set_format(p)
             #------------------------------------------------
                 bold_words = [
                     "Председатель Правления", 
@@ -959,11 +806,6 @@ if uploaded_file:
                 ]
                 for _ in range(5):
                     emptyLine = formatted_doc.add_paragraph()
-                    # run = emptyLine.add_run(" ")  # Add a space to ensure formatting applies
-                    # font = run.font
-                    # font.name = 'Times New Roman'
-                    # run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
-                    # font.size = Pt(12)
                     force_font_on_paragraph(emptyLine)
 
                     parEmptyLine = emptyLine.paragraph_format
@@ -1017,11 +859,6 @@ if uploaded_file:
 
             elif block == "Блок9":
                 emptyLine = formatted_doc.add_paragraph()
-                # run = emptyLine.add_run(" ")  # Add a space to ensure formatting applies
-                # font = run.font
-                # font.name = 'Times New Roman'
-                # run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
-                # font.size = Pt(12)
                 force_font_on_paragraph(emptyLine)
 
                 parEmptyLine = emptyLine.paragraph_format
@@ -1037,11 +874,11 @@ if uploaded_file:
                         run = p.add_run(para)
                         apply_format(p,10,False,WD_PARAGRAPH_ALIGNMENT.LEFT)
                 emptyLine = formatted_doc.add_paragraph()
-                # run = emptyLine.add_run(" ")  # Add a space to ensure formatting applies
-                # font = run.font
-                # font.name = 'Times New Roman'
-                # run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
-                # font.size = Pt(12)
+                run = emptyLine.add_run(" ")  # Add a space to ensure formatting applies
+                font = run.font
+                font.name = 'Times New Roman'
+                run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
+                font.size = Pt(12)
                 force_font_on_paragraph(emptyLine)
 
                 parEmptyLine = emptyLine.paragraph_format
@@ -1051,35 +888,28 @@ if uploaded_file:
                 parEmptyLine.space_after = Pt(0)
                 
             elif block == "Блок10":
-                # emptyLine = formatted_doc.add_paragraph()
-                # # run = emptyLine.add_run(" ")  # Add a space to ensure formatting applies
-                # # font = run.font
-                # # font.name = 'Times New Roman'
-                # # run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Times New Roman')
-                # # font.size = Pt(12)
-                # force_font_on_paragraph(emptyLine)
+                cleaned_paragraphs = [clean_text(p) for p in paragraphs if clean_text(p)]
 
-                # parEmptyLine = emptyLine.paragraph_format
-                # parEmptyLine.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
-                # parEmptyLine.line_spacing = 1.0
-                # parEmptyLine.space_before = Pt(0)
-                # parEmptyLine.space_after = Pt(0)
-                
-                p = formatted_doc.add_paragraph()
-                run = p.add_run("Приложение")
-                font = run.font
-                font.name = 'Times New Roman'
-                font.size = Pt(11)
-                font.bold = True
-                
-                pf = p.paragraph_format
-                pf.space_before = Pt(0)
-                pf.space_after =  Pt(3)
-                for para in paragraphs:
+# Check if "Приложение" already exists as the first non-empty line
+                if not cleaned_paragraphs or cleaned_paragraphs[0].strip().lower() != "приложение":
+
+                    p = formatted_doc.add_paragraph()
+                    run = p.add_run("Приложения")
+                    font = run.font
+                    font.name = 'Times New Roman'
+                    font.size = Pt(11)
+                    font.bold = True
+                    
+                    pf = p.paragraph_format
+                    pf.space_before = Pt(0)
+                    pf.space_after =  Pt(3)
+                for para in cleaned_paragraphs:
+                    if para.strip().lower() == "приложения":
+                        continue
                     para = clean_text(para)
+                    para = strip_manual_numbering(para)
                     if para:
                         p = formatted_doc.add_paragraph(para, style='List Number') 
-                    # set_format(p)
                         p.text = apply_typographic_fixes(p.text)
                         run = p.runs[0] if p.runs else p.add_run()
                         font = run.font
@@ -1096,11 +926,7 @@ if uploaded_file:
                         fixed_text = apply_typographic_fixes(para) 
                         p = formatted_doc.add_paragraph(para)
                         set_format(p)
-                        #apply_typographic_fixes(p.text)
 
-        # === Save result ===
-        #formatted_doc.save(output_path)
-        #print(f"✅ Reformatted document saved to: {output_path}")
     if doc.paragraphs and doc.paragraphs[0].text.strip() == "БЮЛЛИТЕНЬ":
         
         
@@ -1111,4 +937,4 @@ if uploaded_file:
     buffer = io.BytesIO()
     formatted_doc.save(buffer)
     buffer.seek(0)
-    st.download_button("Download Reformatted DOCX", data=buffer, file_name="Reformatted_Change.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    st.download_button("Download Reformatted DOCX", data=buffer, file_name=uploaded_file.name, mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
